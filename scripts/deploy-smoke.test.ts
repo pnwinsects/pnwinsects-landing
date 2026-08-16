@@ -112,7 +112,7 @@ describe('formatResult', () => {
 // ---------------------------------------------------------------------------
 
 describe('DEFAULT_CDN_ORIGIN', () => {
-  it('points to the production CDN', () => {
-    assert.equal(DEFAULT_CDN_ORIGIN, 'https://pnwinsects.org');
+  it('points at the hostname the site is actually served from', () => {
+    assert.equal(DEFAULT_CDN_ORIGIN, 'https://pnwinsects.b-cdn.net');
   });
 });

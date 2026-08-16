@@ -58,7 +58,8 @@ Static files only — no server, no database, matching the pnwmoths architecture
 - **Pull zone:** https://pnwinsects.b-cdn.net/
 - **Public domain:** `pnwinsects.org` and `www.pnwinsects.org`, pointed at the pull zone by
   CNAME. Both hostnames also need to be added as Custom Hostnames on the pull zone in the
-  bunny.net dashboard, with a certificate issued, before HTTPS will work.
+  bunny.net dashboard, with a certificate issued, before HTTPS will work. **Not live yet** —
+  see "Domain cutover" below.
 
 ### Deploying
 
@@ -73,6 +74,32 @@ makes no network calls.
 
 Deletion is therefore manual, via the bunny.net dashboard. That is the same trade the moths
 site makes — an uploader that cannot delete cannot destroy the site through a build bug.
+
+### Required pull-zone cache configuration
+
+The pull zone **must serve HTML with `Cache-Control: no-cache`.** Deploys are additive and
+never purge, so cache correctness comes from headers alone: `index.html` changes in place on
+every deploy, and Bunny's default (`public, max-age=2592000`) would pin a month-old copy of
+the site at the edge. Static assets should keep their long TTL — they are safe to cache.
+
+This is a dashboard setting, not something the repo can enforce, so `npm run deploy:smoke`
+asserts it after every deploy and fails the workflow if it regresses. Match the moths pull
+zone, which serves HTML as `no-cache` and CSS as `max-age=25600000`: bunny.net dashboard →
+Pull Zone → **Edge Rules**, a rule matching `*.html` (and the directory-index request) that
+sets the response header `Cache-Control: no-cache`, with Smart Cache set to respect origin
+cache-control. See [ADR 0009](https://github.com/pnwinsects/pnwmoths/blob/main/docs/adr/0009-bunny-cache-policy.md)
+in pnwmoths for the reasoning.
+
+### Domain cutover
+
+Until `pnwinsects.org` is repointed, it resolves to the registrar's parking page, so the
+smoke check targets `https://pnwinsects.b-cdn.net` — the hostname the site is really served
+from. The canonical URLs in the HTML already say `pnwinsects.org`; that is intentional.
+
+To finish the cutover: add both hostnames as Custom Hostnames on the pull zone and issue
+certificates, have the CNAMEs pointed at `pnwinsects.b-cdn.net`, then change
+`DEFAULT_CDN_ORIGIN` in `scripts/deploy-smoke.ts` to `https://pnwinsects.org` so the check
+starts guarding the domain visitors actually use.
 
 ### Required secret
 

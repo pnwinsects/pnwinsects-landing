@@ -23,7 +23,7 @@
  *     node scripts/deploy-smoke.ts                        # override CDN origin
  *
  * Environment variables:
- *   CDN_ORIGIN      — CDN pull-zone origin (default: https://pnwinsects.org)
+ *   CDN_ORIGIN      — CDN pull-zone origin (default: https://pnwinsects.b-cdn.net)
  *   SMOKE_URLS      — comma-separated list of site-relative paths to check
  *   SMOKE_SAMPLE    — max number of HTML pages to sample when SMOKE_URLS is not set (default: 5)
  *   SITE_DIR        — local build directory (default: _site)
@@ -38,7 +38,19 @@ import { pathToFileURL } from 'node:url';
 // Configuration
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_CDN_ORIGIN = 'https://pnwinsects.org';
+/**
+ * Where the deployed site is actually reachable *today*.
+ *
+ * Not the canonical origin: pages carry rel=canonical for https://pnwinsects.org,
+ * but that hostname still resolves to the registrar's parking page until the
+ * CNAME is repointed at the pull zone and the custom hostname + certificate are
+ * added in the bunny.net dashboard. Smoke-checking the canonical name before
+ * then fails on DNS and says nothing about whether the deploy worked.
+ *
+ * Flip this to https://pnwinsects.org once the cutover is done — that is the
+ * change that makes this check start guarding the domain visitors actually use.
+ */
+export const DEFAULT_CDN_ORIGIN = 'https://pnwinsects.b-cdn.net';
 
 const CDN_ORIGIN: string = (process.env['CDN_ORIGIN'] ?? DEFAULT_CDN_ORIGIN).replace(/\/+$/, '');
 const SITE_DIR: string = process.env['SITE_DIR'] ?? '_site';
@@ -96,6 +108,12 @@ export interface SmokeResult {
   contentOk: boolean;
   expectedHash: string;
   actualHash: string | null;
+  /**
+   * Set when the URL could not be fetched at all, or answered non-2xx. Distinct
+   * from a fetched response whose headers or body were wrong — the two have
+   * completely different remedies, so the summary must not conflate them.
+   */
+  error?: string;
 }
 
 /**
@@ -127,7 +145,8 @@ export async function checkUrl(
     });
 
     if (!res.ok) {
-      console.error(`  ✗ ${relPath} — HTTP ${res.status} ${res.statusText}`);
+      result.error = `HTTP ${res.status} ${res.statusText}`;
+      console.error(`  ✗ ${relPath} — ${result.error}`);
       return result;
     }
 
@@ -145,7 +164,8 @@ export async function checkUrl(
 
     result.ok = result.cacheControlOk && result.contentOk;
   } catch (err) {
-    console.error(`  ✗ ${relPath} — fetch error: ${(err as Error).message}`);
+    result.error = (err as Error).message;
+    console.error(`  ✗ ${relPath} — fetch error: ${result.error}`);
   }
 
   return result;
@@ -225,7 +245,21 @@ async function main(): Promise<void> {
   console.log(`[deploy-smoke] ${passed} passed, ${failed} failed out of ${results.length + localFailures} checked`);
 
   if (failed > 0) {
-    console.error('[deploy-smoke] stale content detected — consider a pull-zone purge (bunny.net dashboard → Pull Zone → Purge Cache).');
+    // Distinguish the three failure modes rather than blaming the cache for all
+    // of them: a purge cannot fix a hostname that does not resolve, and it
+    // cannot fix a pull zone configured to cache HTML for a month.
+    const unreachable = results.some((r) => !r.ok && r.error !== undefined);
+    const staleHeaders = results.some((r) => !r.ok && r.error === undefined);
+    if (unreachable) {
+      console.error(`[deploy-smoke] could not reach ${CDN_ORIGIN}.`);
+      console.error('[deploy-smoke] check that the hostname resolves and points at the pull zone,');
+      console.error('[deploy-smoke] or set CDN_ORIGIN to the origin you actually want to check.');
+    }
+    if (staleHeaders) {
+      console.error('[deploy-smoke] the CDN answered but served stale content or the wrong cache headers.');
+      console.error('[deploy-smoke] HTML must be no-cache (bunny.net dashboard → Pull Zone → Edge Rules);');
+      console.error('[deploy-smoke] if the headers are right, purge the zone (Pull Zone → Purge Cache).');
+    }
     process.exit(1);
   }
 

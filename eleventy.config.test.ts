@@ -62,14 +62,23 @@ test('public/ is copied to the site root so /images and /styles resolve', () => 
   assert.deepEqual(passthrough, [{ 'public/': '/' }]);
 });
 
-// The deploy smoke test fetches this origin; if the two drift, a green deploy
-// can be validating the wrong site.
-test('siteOrigin matches the origin deploy-smoke.ts checks', () => {
+// siteOrigin is the *canonical* origin baked into rel=canonical and og:url, so
+// it must be the public domain even before DNS points there. That is deliberately
+// not the same as deploy-smoke's origin, which has to be a hostname that resolves
+// today; see the comment on DEFAULT_CDN_ORIGIN. Asserting they match would be
+// asserting the cutover has happened.
+test('siteOrigin is the canonical public domain', () => {
   const { globals } = run();
   assert.equal(globals.siteOrigin, 'https://pnwinsects.org');
+});
 
+// Both hostnames must be the pnwinsects zone. This catches the copy-paste that
+// would otherwise point the new site's deploy checks at the moths site.
+test('the smoke origin is a pnwinsects host, not an inherited pnwmoths one', () => {
   const smoke = readFileSync(join(repoRoot, 'scripts', 'deploy-smoke.ts'), 'utf8');
-  assert.match(smoke, /DEFAULT_CDN_ORIGIN\s*=\s*'https:\/\/pnwinsects\.org'/);
+  const match = /DEFAULT_CDN_ORIGIN\s*=\s*'([^']+)'/.exec(smoke);
+  assert.ok(match, 'DEFAULT_CDN_ORIGIN not found in deploy-smoke.ts');
+  assert.match(match[1] ?? '', /^https:\/\/(pnwinsects\.org|pnwinsects\.b-cdn\.net)$/);
 });
 
 test('every asset the landing page references exists under public/', () => {
