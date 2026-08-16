@@ -1,0 +1,37 @@
+name: PR Check
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # no git push here; keep token out of .git/config
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          # `cache: 'npm'` is omitted deliberately: setup-node derives its cache
+          # key from a lockfile and hard-fails without one. Restore it in the
+          # same change that commits package-lock.json.
+      # No package-lock.json is committed yet: the machine this repo was
+      # scaffolded on cannot reach registry.npmjs.org (TLS handshake refused for
+      # npm *and* curl), so a lockfile could not be generated. Commit one and
+      # switch this back to `npm ci` at the first opportunity — see README.
+      - run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: TS-only invariant guard
+        run: bash scripts/check-ts-only.sh
+      - uses: ./.github/actions/install-lychee
+        with:
+          version: '0.23.0'
+      - name: Build site (with blocking link check)
+        run: npm run build

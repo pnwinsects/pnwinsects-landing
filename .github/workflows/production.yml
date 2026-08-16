@@ -1,0 +1,50 @@
+name: Deploy to Production (Bunny)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # no git push here; keep token out of .git/config
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          # See pr-check.yml: no lockfile yet, so no setup-node npm cache.
+      # See the note in pr-check.yml: no lockfile is committed yet.
+      - run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: TS-only invariant guard
+        run: bash scripts/check-ts-only.sh
+      - uses: ./.github/actions/install-lychee
+        with:
+          version: '0.23.0'
+      - name: Build site
+        run: npm run build:site
+      # Non-blocking: link rot on a third-party site must not block a deploy of
+      # content that is otherwise correct. The PR check runs this same check
+      # blocking, so regressions are caught before merge.
+      - name: Check links (non-blocking)
+        run: npm run build:validate-links
+        continue-on-error: true
+      - name: Upload _site to Bunny
+        run: npm run site:upload
+        env:
+          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+      - name: CDN smoke check
+        run: npm run deploy:smoke

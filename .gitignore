@@ -1,0 +1,5 @@
+_site/
+node_modules/
+.lycheecache
+link-report.json
+.env

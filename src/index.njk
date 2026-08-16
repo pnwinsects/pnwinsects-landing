@@ -1,0 +1,56 @@
+---
+layout: base.njk
+title: PNW Insects
+permalink: /index.html
+description: "Photographs, descriptions, distribution maps, and identification tools for the insect fauna of British Columbia, Washington, Oregon, Idaho, and western Montana."
+---
+<section class="banner">
+  <img class="banner-img" src="/images/banner-damselfly.jpg" alt="A blue-and-black damselfly resting on a bright green leaf">
+  <div class="banner-scrim"></div>
+  <div class="wrap">
+    <div class="banner-copy">
+      <h1>PNW Insects</h1>
+      <p>Photographs, descriptions, distribution maps, and identification tools for the region&rsquo;s insect fauna</p>
+    </div>
+  </div>
+  <span class="banner-credit">Photo: J. Williams</span>
+</section>
+
+<main class="wrap">
+  <div class="columns">
+
+    <section class="intro">
+      <h2>Focus</h2>
+      <p>
+        Built on a foundation of collaboration among entomologists and institutions across the
+        region, PNW Insects features comprehensive, information on select insect groups for
+        British Columbia, Washington, Oregon, Idaho, and western Montana. We pair specimen
+        photographs with detailed species accounts full of identification tips, distribution maps
+        based on expert-reviewed records, and life history information. Our interactive
+        identification tools and checklists make this site a powerful resource for anyone
+        interested in the region&rsquo;s insects.
+      </p>
+    </section>
+
+    <section class="resources">
+      <h2 class="section-head">Resources</h2>
+      <p class="section-sub">More resources join the list as they are completed.</p>
+
+      <div class="cards">
+        {% for resource in resources %}
+        <a class="card" href="{{ resource.url }}">
+          <div class="thumb">
+            <img src="/images/{{ resource.image }}" alt="{{ resource.alt }}">
+          </div>
+          <div class="body">
+            <h3>{{ resource.name }}</h3>
+            <p class="count"><span class="badge">{{ resource.badge }}</span></p>
+            <p>{{ resource.description }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+
+  </div>
+</main>

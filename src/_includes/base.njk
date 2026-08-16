@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ description }}">
+  <link rel="canonical" href="{{ siteOrigin }}/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:url" content="{{ siteOrigin }}/">
+  <meta property="og:image" content="{{ siteOrigin }}/images/banner-damselfly.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/styles/theme.css">
+</head>
+<body>
+
+{{ content | safe }}
+
+{#- Named so it forms a `region` landmark: this block sits between <main> and
+   <footer>, and an unlabelled <section> leaves its content outside every
+   landmark (axe `region`). Same reasoning as the pnwmoths layout. -#}
+<section class="partners-banner" aria-label="Partner institutions and funders">
+  <div class="partners-inner">
+    <div class="partners-group">
+      <h2 class="partners-heading">An Institutional Partnership Between</h2>
+      <ul class="partners-logos">
+        {% for partner in partners.collaborators %}
+        <li>
+          <a href="{{ partner.url }}" title="{{ partner.name }}" target="_blank" rel="noopener">
+            <img src="/images/logos/{{ partner.logo }}" alt="{{ partner.name }}" loading="lazy">
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="partners-group">
+      <h2 class="partners-heading">Funding</h2>
+      <ul class="partners-logos">
+        {% for partner in partners.funders %}
+        <li>
+          <a href="{{ partner.url }}" title="{{ partner.name }}" target="_blank" rel="noopener">
+            <img src="/images/logos/{{ partner.logo }}" alt="{{ partner.name }}" loading="lazy">
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>PNW Insects. Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0</a>.</p>
+    <p><a href="mailto:pnwmoths@gmail.com">Contact</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

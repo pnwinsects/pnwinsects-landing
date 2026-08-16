@@ -1,0 +1,24 @@
+timeout = 20
+max_retries = 3
+# No result cache, matching pnwmoths (ADR 0027 there): this site links out to only
+# a couple of dozen external hosts, so a cache would spare almost nothing while
+# letting one transient failure fail every PR for a week.
+accept = ["100..=103", "200..=299", "429"]
+
+# Excludes, in order:
+#
+#   ^https://(www\.)?pnwinsects\.org/?$ — this site's own canonical/og:url. Every
+#     page carries an absolute rel=canonical pointing at production, and lychee
+#     extracts it like any other <link href>. Checking it would validate the
+#     *deployed* site rather than the build under test, so a PR adding a page
+#     would fail for the correct reason that the page is not deployed yet.
+#
+#   agriculture.canada.ca, cbif.gc.ca — partner logos in the footer link here.
+#     Both sit behind protection that hangs or refuses GitHub-runner traffic while
+#     serving 200 in under a second from a workstation. Learned the hard way in
+#     pnwmoths, where one unreachable host produced 1,238 of 1,238 errors.
+exclude = [
+  "^https://(www\\.)?pnwinsects\\.org/?$",
+  "agriculture\\.canada\\.ca",
+  "cbif\\.gc\\.ca",
+]

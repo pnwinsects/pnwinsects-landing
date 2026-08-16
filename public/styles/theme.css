@@ -1,0 +1,231 @@
+:root {
+  --ink: #1c1f1a;
+  --muted: #5d665a;
+  --line: #d8dcd2;
+  --paper: #fbfbf8;
+  --panel: #ffffff;
+  --accent: #3f6b3a;
+  --accent-soft: #eaf1e6;
+  --radius: 10px;
+  --max: 1200px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
+
+/* ---------- banner ---------- */
+.banner {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: clamp(260px, 32vw, 420px);
+  color: #fff;
+  overflow: hidden;
+  background: #24301f;
+}
+.banner-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  /* keep the damselfly in frame as the viewport narrows */
+  object-position: 72% 50%;
+}
+/* Scrim only over the soft bokeh on the left, so the insect stays clean. */
+.banner-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg,
+    rgba(12,20,10,.78) 0%,
+    rgba(12,20,10,.60) 26%,
+    rgba(12,20,10,.18) 48%,
+    rgba(12,20,10,0) 64%);
+}
+/* Break out of the centred container so the copy sits near the left edge.
+   `.wrap` has `margin: 0 auto`, and auto inline margins on a grid item
+   suppress stretch and re-centre it — so reset the margin, not just the width. */
+.banner .wrap {
+  position: relative;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding-left: clamp(1.25rem, 3.5vw, 3.5rem);
+}
+.banner-copy { max-width: 30ch; }
+.banner h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4.4vw, 3rem);
+  line-height: 1.1;
+  text-shadow: 0 2px 14px rgba(0,0,0,.55);
+}
+.banner p {
+  margin: .7rem 0 0;
+  font-size: clamp(.98rem, 1.6vw, 1.1rem);
+  color: rgba(255,255,255,.92);
+  text-shadow: 0 1px 10px rgba(0,0,0,.6);
+}
+.banner-credit {
+  position: absolute; right: .75rem; bottom: .45rem;
+  font-size: .7rem; color: rgba(255,255,255,.7);
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
+}
+
+/* Narrow viewports: the wide crop loses its left margin, so scrim the
+   whole frame and drop the copy to the bottom. */
+@media (max-width: 700px) {
+  .banner { align-items: end; min-height: 300px; }
+  .banner-img { object-position: 62% 45%; }
+  .banner-scrim {
+    background: linear-gradient(180deg,
+      rgba(12,20,10,.35) 0%,
+      rgba(12,20,10,.15) 35%,
+      rgba(12,20,10,.80) 100%);
+  }
+  .banner-copy { max-width: none; padding-bottom: 1.4rem; }
+}
+
+/* ---------- intro ---------- */
+.intro { padding: 2.5rem 0 .5rem; max-width: 68ch; }
+.intro h2 { margin: 0 0 .5rem; font-size: 1.35rem; }
+.intro p { margin: 0 0 .75rem; color: var(--muted); }
+
+/* ---------- desktop: Focus and Resources side by side ---------- */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+/* In two columns the track already constrains the measure, and the
+   section headings should line up at the same baseline. */
+.columns .intro { max-width: none; padding-top: 2.5rem; }
+.columns .resources { padding-top: 2.5rem; }
+/* Match the h2 sizing across both columns so the tops align. */
+.columns .section-head { font-size: 1.35rem; margin-bottom: .5rem; }
+
+/* ---------- resources ---------- */
+.resources { padding: 1.5rem 0 3rem; }
+
+.section-head { margin: 0 0 .35rem; font-size: 1.15rem; }
+.section-sub { margin: 0 0 1rem; color: var(--muted); font-size: .95rem; }
+
+/* cards */
+/* Auto-fill with a max track width so a single card stays card-sized
+   instead of stretching across the full page. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 280px));
+  gap: 1rem;
+}
+.card {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(31,44,26,.09);
+}
+.card .thumb {
+  aspect-ratio: 4 / 3;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.card .thumb img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+/* Portrait art (e.g. a book cover) is letterboxed rather than cropped. */
+.card .thumb.cover {
+  background: #fff;
+  display: grid; place-items: center;
+  padding: .5rem;
+}
+.card .thumb.cover img {
+  width: auto; max-width: 100%;
+  height: 100%;
+  object-fit: contain;
+  box-shadow: 0 1px 6px rgba(0,0,0,.18);
+}
+.card .body { padding: .7rem .8rem .9rem; }
+.card h3 { margin: 0 0 .2rem; font-size: 1rem; }
+.card p { margin: 0; font-size: .85rem; color: var(--muted); }
+.card .count { font-size: .78rem; color: var(--accent); font-weight: 600; display: inline-block; }
+.card .badge {
+  display: inline-block;
+  font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+  padding: .15rem .45rem; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid #cfe0c4;
+}
+
+/* ---------- partners banner (matches the moths site) ---------- */
+.partners-banner {
+  border-top: 1px solid #d9cf9e;
+  background-color: #ece0ab;
+  padding: 24px;
+}
+.partners-inner { max-width: 1140px; margin: 0 auto; }
+.partners-group + .partners-group { margin-top: 20px; }
+.partners-heading {
+  font-size: 1.1rem;
+  text-align: center;
+  margin: 0 0 12px;
+  color: #4a4a2f;
+}
+.partners-logos {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap;
+  justify-content: center; align-items: center;
+  gap: 20px 28px;
+}
+.partners-logos li { margin: 0; padding: 0; }
+.partners-logos a { display: inline-flex; align-items: center; }
+.partners-logos img {
+  display: block;
+  height: 48px; width: auto; max-width: 160px;
+  object-fit: contain;
+  transition: opacity .15s ease;
+}
+.partners-logos a:hover img { opacity: .75; }
+
+/* ---------- footer ---------- */
+footer {
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  padding: 1.75rem 0;
+  font-size: .88rem; color: var(--muted);
+}
+footer .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: baseline; }
+footer p { margin: 0; }
+footer a { color: var(--accent); }
+
+/* ---------- responsive ---------- */
+/* Below this the two columns stack, restoring the mobile flow. */
+@media (max-width: 860px) {
+  .columns { grid-template-columns: 1fr; gap: 0; }
+  .columns .intro { padding-bottom: .5rem; }
+  .columns .resources { padding-top: 1.5rem; }
+  .columns .section-head { font-size: 1.15rem; }
+}
+@media (max-width: 600px) {
+  .partners-logos { gap: 16px 20px; }
+  .partners-logos img { height: 36px; max-width: 120px; }
+}
+@media (max-width: 420px) {
+  .cards { grid-template-columns: 1fr; gap: .75rem; }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "pnwinsects-landing",
+  "version": "1.0.0",
+  "description": "Landing page for pnwinsects.org — the front door to the PNW Insects family of sites",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:eleventy": "eleventy --config=eleventy.config.ts",
+    "build:validate-links": "lychee --config lychee.toml --root-dir _site '_site/**/*.html'",
+    "build:site": "npm run build:eleventy",
+    "build": "npm run build:site && npm run build:validate-links",
+    "dev": "eleventy --serve --config=eleventy.config.ts",
+    "site:upload": "node scripts/upload-site.ts",
+    "deploy:smoke": "node scripts/deploy-smoke.ts",
+    "test": "node --test eleventy.config.test.ts src/_data/partners.test.ts scripts/upload-site.test.ts scripts/deploy-smoke.test.ts",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.1",
+    "typescript": "^6.0.3"
+  }
+}
