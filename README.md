@@ -79,16 +79,37 @@ site makes — an uploader that cannot delete cannot destroy the site through a 
 
 The pull zone **must serve HTML with `Cache-Control: no-cache`.** Deploys are additive and
 never purge, so cache correctness comes from headers alone: `index.html` changes in place on
-every deploy, and Bunny's default (`public, max-age=2592000`) would pin a month-old copy of
-the site at the edge. Static assets should keep their long TTL — they are safe to cache.
+every deploy, and a long TTL would pin a month-old copy of the site at the edge. Static
+assets should keep their long TTL — they are safe to cache.
 
-This is a dashboard setting, not something the repo can enforce, so `npm run deploy:smoke`
-asserts it after every deploy and fails the workflow if it regresses. Match the moths pull
-zone, which serves HTML as `no-cache` and CSS as `max-age=25600000`: bunny.net dashboard →
-Pull Zone → **Edge Rules**, a rule matching `*.html` (and the directory-index request) that
-sets the response header `Cache-Control: no-cache`, with Smart Cache set to respect origin
-cache-control. See [ADR 0009](https://github.com/pnwinsects/pnwmoths/blob/main/docs/adr/0009-bunny-cache-policy.md)
-in pnwmoths for the reasoning.
+This is dashboard configuration, not something the repo can enforce, so `npm run deploy:smoke`
+asserts it after every deploy and fails the workflow if it regresses.
+
+Two settings under **Pull Zone → Caching → General** produce the correct behaviour, and they
+are the whole story — no edge rule is involved:
+
+| Setting | Required value |
+|---|---|
+| Smart Cache | **ON** |
+| Cache expiration time | **Respect origin Cache-Control** |
+| Browser cache expiration time | Match server cache expiration |
+
+The origin (Bunny Storage) sends no `Cache-Control` of its own — `scripts/upload-site.ts`
+sets none. **Smart Cache** is what classifies responses by extension and MIME type: HTML is
+non-cacheable and gets `no-cache`, while CSS/JS/images are cacheable and get Bunny's
+`max-age=25600000`. "Respect origin Cache-Control" keeps Bunny from overriding that
+classification with a fixed TTL.
+
+A zone created with Bunny's defaults has Smart Cache **off** and Cache expiration set to
+**"Override: 1 month"**, which is exactly where a `public, max-age=2592000` on HTML comes
+from. After changing these, **purge the zone** — the previously cached copy is served with
+its original header until it is evicted.
+
+The moths pull zone additionally carries one edge rule forcing `no-cache` on `*.csv`, because
+it serves mutable CSV data that Smart Cache would otherwise treat as a cacheable asset. This
+site serves no CSVs and deliberately omits that rule. See
+[ADR 0009](https://github.com/pnwinsects/pnwmoths/blob/main/docs/adr/0009-bunny-cache-policy.md)
+in pnwmoths for the reasoning and the full settings.
 
 ### Domain cutover
 
