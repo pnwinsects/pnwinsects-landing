@@ -11,16 +11,41 @@ const repoRoot = dirname(fileURLToPath(import.meta.url));
 function run(): {
   passthrough: (string | Record<string, string>)[];
   globals: Record<string, unknown>;
+  dataExtensions: Record<string, { read: boolean; parser: (filePath: string) => Promise<unknown> }>;
   returned: ReturnType<typeof configure>;
 } {
   const passthrough: (string | Record<string, string>)[] = [];
   const globals: Record<string, unknown> = {};
+  const dataExtensions: Record<string, { read: boolean; parser: (filePath: string) => Promise<unknown> }> = {};
   const stub: EleventyConfig = {
     addPassthroughCopy: (path) => { passthrough.push(path); },
     addGlobalData: (key, value) => { globals[key] = value; },
+    addDataExtension: (extension, options) => { dataExtensions[extension] = options; },
   };
-  return { passthrough, globals, returned: configure(stub) };
+  return { passthrough, globals, dataExtensions, returned: configure(stub) };
 }
+
+// Eleventy does not discover .ts data files on its own, and the failure is
+// silent: the loops over the missing data render nothing at all.
+test('the .ts data extension is registered so src/_data/*.ts is discovered', async () => {
+  const { dataExtensions } = run();
+  const ts = dataExtensions.ts;
+  assert.ok(ts, 'no .ts data extension registered');
+  assert.equal(ts.read, false, 'read:false is what makes the parser receive a path');
+
+  const partners = await ts.parser(join(repoRoot, 'src', '_data', 'partners.ts')) as
+    { collaborators: unknown[] } | undefined;
+  assert.ok(partners, 'parser returned nothing for partners.ts');
+  assert.ok(Array.isArray(partners.collaborators) && partners.collaborators.length > 0);
+});
+
+// Importing a test file during the build would run its assertions as a side effect.
+test('the .ts data parser skips *.test.ts', async () => {
+  const { dataExtensions } = run();
+  const ts = dataExtensions.ts;
+  assert.ok(ts);
+  assert.equal(await ts.parser(join(repoRoot, 'src', '_data', 'partners.test.ts')), undefined);
+});
 
 test('input, includes, data and output directories are the ones the scripts assume', () => {
   const { returned } = run();
