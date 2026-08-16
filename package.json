@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "build:eleventy": "eleventy --config=eleventy.config.ts",
+    "build:check": "node scripts/check-build.ts",
     "build:validate-links": "lychee --config lychee.toml --root-dir _site '_site/**/*.html'",
-    "build:site": "npm run build:eleventy",
+    "build:site": "npm run build:eleventy && npm run build:check",
     "build": "npm run build:site && npm run build:validate-links",
     "dev": "eleventy --serve --config=eleventy.config.ts",
     "site:upload": "node scripts/upload-site.ts",
