@@ -52,7 +52,9 @@ test('every asset the landing page references exists under public/', () => {
     + readFileSync(join(repoRoot, 'src', '_includes', 'base.njk'), 'utf8');
 
   // Only literal, root-relative paths; templated ones are covered by partners.test.ts.
-  const paths = [...html.matchAll(/(?:src|href)="(\/[^"{]+)"/g)].map((m) => m[1]);
+  const paths = [...html.matchAll(/(?:src|href)="(\/[^"{]+)"/g)]
+    .map((m) => m[1])
+    .filter((path): path is string => path !== undefined);
   assert.ok(paths.length > 0, 'expected some literal asset references');
   for (const path of paths) {
     assert.ok(
